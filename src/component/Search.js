@@ -1,7 +1,16 @@
-import React from 'react'
+import React from "react";
 
-export default function Search() {
+function Search({handleSearch}) {
   return (
-    <div>Search</div>
-  )
+    <div className="search">
+      <input
+        type="text"
+        placeholder="Search your Recent Transactions"
+        onChange={handleSearch}
+      />
+      <i className="search-icon"></i>
+    </div>
+  );
 }
+
+export default Search;
