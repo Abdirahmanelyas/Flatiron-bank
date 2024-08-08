@@ -1,4 +1,3 @@
-
 import React from "react";
 
 function Transaction({date, description, category, amount}) {

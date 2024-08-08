@@ -1,41 +1,73 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import TransactionsList from "./TransactionsList";
+import Search from "./Search";
+import AddTransactionForm from "./AddTransactionForm";
 
-function AddTransactionForm() {
-  const [date, setDate] = useState("")
-  const [description, setDescription] = useState("")
-  const [category, setCategory] = useState("")
-  const [amount, setAmount] = useState("")
-  
-  function handleSubmit(e) {
-    fetch("https://bank-of-flatiron-code-challenge-3.onrender.com/transactions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        date: date,
-        description: description,
-        category: category,
-        amount: amount,
-      }),
-    });
-     alert("added successfully")
-  }
+function AccountContainer() {
+  const [transactions, setTransactions] = useState([]);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    fetch(`https://bank-of-flatiron-code-challenge-3.onrender.com/transactions?q=${query}`)
+      .then((resp) => resp.json())
+      .then((data) => setTransactions(data))
+      .catch((error) => console.error("Error fetching data: ", error));
+  }, [query]);
+
+  const handleSearch = (e) => {
+    setQuery(e.target.value);
+  };
+
+  const handleDelete = (id) => {
+    fetch(`https://bank-of-flatiron-code-challenge-3.onrender.com/transactions/${id}`, {
+      method: "DELETE",
+    })
+    .then((resp) => {
+      if (resp.ok) {
+        const updatedTransactions = transactions.filter(transaction => transaction.id !== id);
+        setTransactions(updatedTransactions);
+      } else {
+        throw new Error("Failed to delete transaction");
+      }
+    })
+    .catch((error) => console.error("Error deleting transaction: ", error));
+  };
+
+  const handleSort = (sortBy) => {
+    fetch(`https://bank-of-flatiron-code-challenge-3.onrender.com/transactions?sortBy=${sortBy}`)
+      .then((resp) => resp.json())
+      .then((data) => {
+        const sortedTransactions = data.sort((a, b) => {
+          const fieldValueA = a[sortBy].toLowerCase();
+          const fieldValueB = b[sortBy].toLowerCase();
+          if (fieldValueA < fieldValueB) {
+            return -1;
+          }
+          if (fieldValueA > fieldValueB) {
+            return 1;
+          }
+          return 0;
+        });
+        setTransactions(sortedTransactions);
+      })
+      .catch((error) => console.error("Error fetching sorted data: ", error));
+  };
+
+  const handleAddTransaction = (transaction) => {
+    setTransactions([...transactions, transaction]);
+  };
+
   return (
-    <div className="falcon">
-      <form onSubmit={handleSubmit} className="">
-        <div className="transaction">
-          <input value={date} onChange={(e) => setDate(e.target.value)} type="date" name="date" />
-          <input value={description} onChange={(e) => setDescription(e.target.value)} type="text" name="description" placeholder="Description" />
-          <input value={category} onChange={(e) => setCategory(e.target.value)} type="text" name="category" placeholder="Category" />
-          <input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" name="amount" placeholder="Amount" step="0.01" />
-        </div>
-        <button className="my-button" type="submit">
-          Add Transaction
-        </button>
-      </form>
+    <div>
+      <Search handleSearch={handleSearch} />
+      <AddTransactionForm onAddTransaction={handleAddTransaction} />
+      <TransactionsList
+        transactions={transactions}
+        onDelete={handleDelete}
+        onSort={handleSort}
+      />
     </div>
   );
 }
 
-export default AddTransactionForm;
+export default AccountContainer;
